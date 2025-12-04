@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+.git/
+.gitignore
+.env
+*.md
+.vscode/
+.idea/
+*.log
+data/embeddings.pkl
+data/catalog_*.csv
+data/catalog_raw.json
+data/page_images/
+AI Test.docx
+
