@@ -165,9 +165,9 @@ def display_recommendations(product_id, catalog_df, top_n=5):
         try:
             import pandas as pd
             copurchase_df = pd.read_csv("data/co_purchase.csv")
-            available_ids = copurchase_df["product_id"].unique()[:10]
-            with st.expander("🔍 Debug: Products with recommendations available"):
-                st.write(f"Sample product IDs with recommendations: {', '.join(map(str, available_ids))}")
+            available_ids = copurchase_df["product_id"].unique()
+            with st.expander("Debug: Products with recommendations available"):
+                st.write(f"Product IDs with recommendations: {', '.join(map(str, available_ids))}")
                 st.caption("Try searching for one of these product IDs to see recommendations.")
         except:
             pass

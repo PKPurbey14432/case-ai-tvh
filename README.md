@@ -13,103 +13,21 @@ This system solves the "findability" challenge for TVH's extensive catalog of 50
 
 ## Requirements
 
-### Software Requirements
 - Python 3.8 or higher
-- pip3 (Python package manager)
-- Docker and Docker Compose (optional, for containerized deployment)
+- Docker and Docker Compose
+- OpenAI API Key
 
-### API Keys
-- OpenAI API Key: Required for generating embeddings
-  - Sign up at https://platform.openai.com/
-  - Get your API key from https://platform.openai.com/api-keys
-  - Set as environment variable: `export OPENAI_API_KEY='your-key-here'`
+## Quick Start with Docker Compose
 
-### Python Packages
-Install required packages:
-```bash
-pip3 install -r requirements.txt
-```
-
-## Quick Start
-
-### Option 1: Local Development
-
-#### Step 1: Set Up Environment
-
-```bash
-export OPENAI_API_KEY='your-openai-api-key-here'
-cd /home/lnv221/mine/TVH
-```
-
-#### Step 2: Extract Catalog Data
-
-```bash
-python3 extract_catalog.py
-```
-
-This extracts text and tables from the PDF catalog, saves page images, and creates `data/catalog_clean.csv`.
-
-#### Step 3: Generate LLM-Enhanced Descriptions (Recommended)
-
-```bash
-python3 generate_descriptions.py
-```
-
-This generates rich product descriptions (200-500 words) using OpenAI's LLM and creates `data/catalog_with_descriptions.csv`.
-
-Options:
-- `--max-items N`: Process only first N items (useful for testing)
-- `--start-from N`: Resume from index N (if interrupted)
-- `--input FILE`: Specify input CSV (default: `data/catalog_clean.csv`)
-- `--output FILE`: Specify output CSV (default: `data/catalog_with_descriptions.csv`)
-
-Note: This step requires OpenAI API access and may take time depending on the number of products.
-
-#### Step 4: Build Embeddings
-
-```bash
-python3 build_embeddings.py
-```
-
-This generates text and image embeddings for all products and saves them to `data/embeddings.pkl`.
-
-Note: This step requires OpenAI API access and may take time depending on the number of products.
-
-#### Step 5: Generate Co-Purchase Data (Optional but Recommended)
-
-```bash
-python3 generate_copurchase.py
-```
-
-This generates synthetic co-purchase relationships and creates `data/co_purchase.csv` for recommendations.
-
-#### Step 6: Launch Application
-
-```bash
-python3 main.py
-```
-
-Or directly:
-```bash
-streamlit run app.py
-```
-
-The application will open in your browser at `http://localhost:8501`
-
-### Option 2: Docker Deployment
-
-#### Prerequisites
-- Docker installed
-- Docker Compose installed
-
-#### Step 1: Set Up Environment
+### Step 1: Set Up Environment
 
 Create a `.env` file in the project root:
+
 ```bash
 OPENAI_API_KEY=your-openai-api-key-here
 ```
 
-#### Step 2: Build and Run with Docker Compose
+### Step 2: Run with Docker Compose
 
 ```bash
 docker-compose up --build
@@ -123,9 +41,9 @@ This will:
 
 The application will be available at `http://localhost:8501`
 
-#### Step 3: Run Setup Scripts in Container (if needed)
+### Step 3: Run Pipeline Steps (First Time Setup)
 
-If you need to run data processing scripts:
+If this is the first time running, you need to process the catalog data. Run these commands in separate terminals or after the container is running:
 
 ```bash
 docker-compose exec tvh-finder python3 extract_catalog.py
@@ -134,7 +52,13 @@ docker-compose exec tvh-finder python3 build_embeddings.py
 docker-compose exec tvh-finder python3 generate_copurchase.py
 ```
 
-#### Docker Commands
+Or use the automated pipeline runner:
+
+```bash
+docker-compose exec tvh-finder python3 main.py --run-pipelines
+```
+
+### Docker Commands
 
 Stop the application:
 ```bash
@@ -151,43 +75,86 @@ Rebuild after code changes:
 docker-compose up --build
 ```
 
-## Project Structure
+Run in detached mode:
+```bash
+docker-compose up -d
+```
 
+## Local Development
+
+### Step 1: Install Dependencies
+
+```bash
+pip3 install -r requirements.txt
 ```
-TVH/
-├── app.py
-├── query.py
-├── recommender.py
-├── build_embeddings.py
-├── extract_catalog.py
-├── generate_descriptions.py
-├── generate_copurchase.py
-├── main.py
-├── tvh_findability_demo.py
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── README.md
-├── PRODUCTIONALIZATION.md
-└── data/
-    ├── 12594102_Labels_Decals.pdf
-    ├── catalog_clean.csv
-    ├── catalog_with_descriptions.csv
-    ├── catalog_raw.json
-    ├── embeddings.pkl
-    ├── co_purchase.csv
-    └── page_images/
+
+### Step 2: Set Up Environment
+
+```bash
+export OPENAI_API_KEY='your-openai-api-key-here'
 ```
+
+Or create a `.env` file:
+```bash
+OPENAI_API_KEY=your-openai-api-key-here
+```
+
+### Step 3: Run Pipeline
+
+Run all pipeline steps automatically:
+
+```bash
+python3 main.py --run-pipelines
+```
+
+Or run steps individually:
+
+```bash
+python3 extract_catalog.py
+python3 generate_descriptions.py
+python3 build_embeddings.py
+python3 generate_copurchase.py
+```
+
+### Step 4: Launch Application
+
+```bash
+python3 main.py
+```
+
+Or directly:
+```bash
+streamlit run app.py
+```
+
+The application will open in your browser at `http://localhost:8501`
+
+## Pipeline Steps
+
+1. **Extract Catalog** (`extract_catalog.py`)
+   - Extracts text, tables, and images from PDF catalog
+   - Creates `data/catalog_clean.csv`
+
+2. **Generate Descriptions** (`generate_descriptions.py`) - Optional
+   - Generates rich product descriptions (200-500 words) using OpenAI LLM
+   - Creates `data/catalog_with_descriptions.csv`
+   - Options: `--max-items N`, `--start-from N`
+
+3. **Build Embeddings** (`build_embeddings.py`)
+   - Generates text and image embeddings using OpenAI
+   - Creates `data/embeddings.pkl`
+   - Automatically uses enhanced descriptions if available
+
+4. **Generate Co-Purchase Data** (`generate_copurchase.py`) - Optional
+   - Generates synthetic co-purchase relationships
+   - Creates `data/co_purchase.csv` for recommendations
 
 ## Usage Guide
 
 ### Text Search
 
 1. Select "Text Search" mode
-2. Enter a natural language query, e.g.:
-   - "yellow caution label for hydraulic systems"
-   - "safety warning decal"
-   - "reflective strip for trailer"
+2. Enter a natural language query
 3. Click "Search"
 4. Review results with relevance scores
 5. Click on any product to see recommendations
@@ -213,97 +180,61 @@ In the sidebar, you can adjust:
 - Semantic vs Keyword Weight: Balance between semantic and keyword matching
 - Number of Results: How many results to display
 
+## Project Structure
+
+```
+TVH/
+├── app.py
+├── query.py
+├── recommender.py
+├── build_embeddings.py
+├── extract_catalog.py
+├── generate_descriptions.py
+├── generate_copurchase.py
+├── main.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── data/
+    ├── 12594102_Labels_Decals.pdf
+    ├── catalog_clean.csv
+    ├── catalog_with_descriptions.csv
+    ├── embeddings.pkl
+    ├── co_purchase.csv
+    └── page_images/
+```
+
 ## Architecture
 
-### Components
-
-1. Data Extraction (`extract_catalog.py`)
-   - Extracts text, tables, and images from PDF
-   - Normalizes product data
-   - Creates structured catalog
-
-2. Description Generation (`generate_descriptions.py`)
-   - Uses OpenAI's LLM (GPT-4o-mini) to generate rich product descriptions
-   - Creates 200-500 word descriptions for each product
-   - Enhances product information with professional, detailed content
-   - Optional but recommended for better search quality
-
-3. Embedding Generation (`build_embeddings.py`)
-   - Uses OpenAI's embedding models
-   - Creates vector representations for text and images
-   - Enables semantic similarity search
-   - Automatically uses enhanced descriptions if available
-
-4. Search Engine (`query.py`)
-   - Semantic search using vector similarity
-   - Hybrid search combining semantic + keyword matching
-   - Image-based search
-
-5. Recommendation System (`recommender.py`)
-   - Loads co-purchase relationships
-   - Generates product recommendations
-   - Scores recommendations by relevance
-
-6. User Interface (`app.py`)
-   - Streamlit-based interactive interface
-   - Product display with images and rich descriptions
-   - Recommendation integration
-
-## Approach & Technology Decisions
-
-### Search Approach
-
-Hybrid Search: Combines semantic embeddings with keyword matching
-- Semantic: Understands meaning and context (e.g., "caution" matches "warning")
-- Keyword: Exact matches for specific terms (e.g., product codes, colors)
-- Weighted Combination: Configurable balance between the two
-
-### Technology Choices
-
-- Python: Rapid development, rich ML ecosystem
-- OpenAI Embeddings: High-quality semantic understanding
-- Streamlit: Fast UI prototyping and demos
-- Vector Search: Cosine similarity for fast retrieval
-
-### Why This Approach?
-
-1. Natural Language Understanding: Users can describe scenarios, not just keywords
-2. Multimodal: Supports both text and image queries
-3. Scalable: Vector search can scale to millions of products
-4. Flexible: Hybrid approach handles both semantic and exact queries
-
-## Productionalization
-
-See `PRODUCTIONALIZATION.md` for detailed plans on:
-- Scaling to 50M products
-- Vector database selection (FAISS, Pinecone, Weaviate)
-- API design and deployment
-- Cost optimization
-- Monitoring and observability
-- Integration with TVH systems
+1. **Data Extraction**: Extracts product data from PDF catalogs
+2. **Description Generation**: Uses OpenAI LLM to generate rich product descriptions
+3. **Embedding Generation**: Creates semantic embeddings for text and images
+4. **Search Engine**: Hybrid search combining semantic and keyword matching
+5. **Recommendation System**: Frequently-bought-together recommendations
+6. **User Interface**: Streamlit-based interactive interface
 
 ## Troubleshooting
 
-### "Embeddings not found"
-- Run `python3 build_embeddings.py` to generate embeddings
+### Embeddings not found
+- Run `python3 build_embeddings.py` or use `python3 main.py --run-pipelines`
 
-### "OpenAI API Error"
-- Check that `OPENAI_API_KEY` is set correctly
+### OpenAI API Error
+- Check that `OPENAI_API_KEY` is set correctly in `.env` file
 - Verify you have API credits
 - Check your internet connection
 
-### "No recommendations available"
+### No recommendations available
 - Run `python3 generate_copurchase.py` to create recommendation data
 
-### Slow search performance
-- This is expected in the demo (in-memory search)
-- Production would use vector databases (FAISS, Pinecone) for speed
-
 ### Docker issues
-- Ensure Docker and Docker Compose are installed and running
+- Ensure Docker and Docker Compose are installed
 - Check that port 8501 is not already in use
 - Verify `.env` file exists with `OPENAI_API_KEY` set
 - Check logs with `docker-compose logs`
+
+### Port already in use
+- Change port in `docker-compose.yml`: `"8502:8501"`
+- Update main.py: `python3 main.py --port 8502`
 
 ## Performance Notes
 
@@ -314,30 +245,6 @@ See `PRODUCTIONALIZATION.md` for detailed plans on:
 ## Security Notes
 
 - API Keys: Never commit API keys to version control
+- Use `.env` file for local development
 - Data: Catalog data is public; no sensitive information
-- Production: Implement authentication, rate limiting, and input validation
 
-## Code Quality
-
-- Total Lines: 1500+ lines of Python code
-- Documentation: Comprehensive comments and docstrings
-- Modularity: Well-organized, reusable components
-- Best Practices: Follows Python best practices and security guidelines
-
-## How This Helps TVH
-
-1. Contact Center: Agents can quickly find products from customer descriptions
-2. Customer Self-Service: Better search on website reduces support load
-3. Recommendations: Increase basket size and cross-selling
-4. Scalability: Architecture supports growth to 50M products
-
-## Support
-
-For questions or issues:
-- Review the code comments for implementation details
-- Check `PRODUCTIONALIZATION.md` for production considerations
-- Ensure all setup steps are completed
-
-## License
-
-This is a demo project for TVH technical assessment.
